@@ -32,6 +32,21 @@ app.get("/fun/1", (req, res) => {
   console.log("Fun2 is called");
 });
 
+app.get("/getUserData", (req, res, next) => {
+  try {
+    throw new Error("random error");
+    res.send("Sent Data");
+  } catch (error) {
+    res.status(500).send("Handled using try/catch ");
+  }
+});
+
+app.use("/", (err, req, res, next) => {
+  if (err) {
+    res.status(500).send("Something went wrong!");
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server Started on PORT ${PORT}`);
 });
