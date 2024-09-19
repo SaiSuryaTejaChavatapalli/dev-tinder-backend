@@ -44,3 +44,27 @@ app.delete("/user", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server Started on ${PORT}`);
 });
+
+app.use(
+  "/user",
+  (req, res, next) => {
+    console.log("Handling the route user 1");
+    next();
+    // res.send("1st Response");
+  },
+  (req, res, next) => {
+    console.log("Handling the route user 2");
+    // res.send("2nd Response !");
+    next();
+  },
+  (req, res, next) => {
+    console.log("Handling the route user 3");
+    // res.send("3nd Response !");
+    next();
+  },
+  (req, res, next) => {
+    console.log("Handling the route user 4");
+    // res.send("4nd Response !");
+    next();
+  }
+);
