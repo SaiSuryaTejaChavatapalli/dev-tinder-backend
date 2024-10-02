@@ -9,18 +9,43 @@ app.use(express.json());
 
 app.post("/signup", async (req, res) => {
   const user = new User(req.body);
-  // const user = new User({
-  //   firstName: "Sai",
-  //   lastName: "Ch",
-  //   emailId: "sst@gmail.com",
-  //   gender: "Male",
-  //   age: 24,
-  // });
+
   try {
     await user.save();
     res.send("User Registered Successfully");
   } catch (error) {
     res.status(400).send("User Registration Failed" + error);
+  }
+});
+
+app.get("/user", async (req, res) => {
+  try {
+    const userEmail = req.body.emailId;
+    const user = await User.findOne({ emailId: userEmail });
+    if (!user) {
+      res.status(404).send("User not found");
+    } else {
+      res.send(user);
+    }
+
+    // const userEmail = req.body.emailId;
+    // const users = await User.find({ emailId: userEmail });
+    // if (users.length === 0) {
+    //   res.status(404).send("User not found");
+    // } else {
+    //   res.send(users);
+    // }
+  } catch (error) {
+    res.status(400).send("Something went wrong");
+  }
+});
+
+app.get("/feed", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.send(users);
+  } catch (error) {
+    res.status(400).send("Something went wrong");
   }
 });
 
