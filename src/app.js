@@ -69,11 +69,13 @@ app.patch("/user", async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(userId, data, {
       returnDocument: "after",
+      runValidators: true,
+      //By default validation will not work, we need to make runValidators:true
     });
 
     res.send("User Updated Successfully");
   } catch (error) {
-    res.status(400).send("Something went wrong");
+    res.status(400).send("Update failed" + error.message);
   }
 });
 
