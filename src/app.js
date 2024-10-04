@@ -1,20 +1,50 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const connectToDB = require("./config/database");
 const User = require("./models/user");
-
+const { validateSignup } = require("./utils/validate");
 const app = express();
 const PORT = 7777;
 
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
-  const user = new User(req.body);
+  // Validate the request
 
   try {
+    validateSignup(req);
+    const { firstName, lastName, emailId, password } = req.body;
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
     await user.save();
     res.send("User Registered Successfully");
   } catch (error) {
     res.status(400).send("User Registration Failed" + error);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { emailId, password } = req.body;
+
+  try {
+    const user = await User.findOne({ emailId: emailId });
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      throw new Error("Invalid Credentials");
+    } else {
+      res.send("Login Success");
+    }
+  } catch (error) {
+    res.status(400).send("ERROR:" + error.message);
   }
 });
 
