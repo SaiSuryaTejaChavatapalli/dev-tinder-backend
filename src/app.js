@@ -1,5 +1,7 @@
 const express = require("express");
+const cookeParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const connectToDB = require("./config/database");
 const User = require("./models/user");
 const { validateSignup } = require("./utils/validate");
@@ -7,6 +9,7 @@ const app = express();
 const PORT = 7777;
 
 app.use(express.json());
+app.use(cookeParser());
 
 app.post("/signup", async (req, res) => {
   // Validate the request
@@ -41,8 +44,27 @@ app.post("/login", async (req, res) => {
     if (!isPasswordCorrect) {
       throw new Error("Invalid Credentials");
     } else {
+      const token = jwt.sign({ _id: user._id }, "Secret@DEV$");
+      res.cookie("token", token);
       res.send("Login Success");
     }
+  } catch (error) {
+    res.status(400).send("ERROR:" + error.message);
+  }
+});
+
+app.get("/profile", async (req, res) => {
+  try {
+    const { token } = req.cookies;
+    if (!token) {
+      throw new Error("Invalid Token");
+    }
+    const decodedMessage = jwt.verify(token, "Secret@DEV$");
+    console.log("DecodedMessage", decodedMessage);
+    const { _id } = decodedMessage;
+    const user = await User.findById(_id);
+
+    res.send(user);
   } catch (error) {
     res.status(400).send("ERROR:" + error.message);
   }
