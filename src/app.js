@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const connectToDB = require("./config/database");
 const User = require("./models/user");
 const { validateSignup } = require("./utils/validate");
+const { userAuth } = require("./middlewares/auth");
 const app = express();
 const PORT = 7777;
 
@@ -53,21 +54,17 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", async (req, res) => {
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const { token } = req.cookies;
-    if (!token) {
-      throw new Error("Invalid Token");
-    }
-    const decodedMessage = jwt.verify(token, "Secret@DEV$");
-    console.log("DecodedMessage", decodedMessage);
-    const { _id } = decodedMessage;
-    const user = await User.findById(_id);
-
+    const user = req.user;
     res.send(user);
   } catch (error) {
     res.status(400).send("ERROR:" + error.message);
   }
+});
+
+app.post("/connectionRequest", userAuth, (req, res) => {
+  res.send("Connection Request sent by " + req.user.firstName);
 });
 
 app.get("/feed", async (req, res) => {
