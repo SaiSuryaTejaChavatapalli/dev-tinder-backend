@@ -2,9 +2,9 @@ const express = require("express");
 const cookeParser = require("cookie-parser");
 
 const connectToDB = require("./config/database");
-const authRouter = require("./router/auth");
-const requestRouter = require("./router/request");
-const profileRouter = require("./router/profile");
+const authRouter = require("./routes/auth");
+const requestRouter = require("./routes/request");
+const profileRouter = require("./routes/profile");
 
 const app = express();
 const PORT = 7777;
