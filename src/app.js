@@ -1,153 +1,18 @@
 const express = require("express");
 const cookeParser = require("cookie-parser");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+
 const connectToDB = require("./config/database");
-const User = require("./models/user");
-const { validateSignup } = require("./utils/validate");
-const { userAuth } = require("./middlewares/auth");
+const authRouter = require("./router/auth");
+const requestRouter = require("./router/request");
+const profileRouter = require("./router/profile");
+
 const app = express();
 const PORT = 7777;
 
 app.use(express.json());
 app.use(cookeParser());
 
-app.post("/signup", async (req, res) => {
-  // Validate the request
-
-  try {
-    validateSignup(req);
-    const { firstName, lastName, emailId, password } = req.body;
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      firstName,
-      lastName,
-      emailId,
-      password: passwordHash,
-    });
-    await user.save();
-    res.send("User Registered Successfully");
-  } catch (error) {
-    res.status(400).send("User Registration Failed" + error);
-  }
-});
-
-app.post("/login", async (req, res) => {
-  const { emailId, password } = req.body;
-
-  try {
-    const user = await User.findOne({ emailId: emailId });
-    if (!user) {
-      throw new Error("Invalid credentials");
-    }
-    const isPasswordCorrect = user.validatePassword(password);
-    if (!isPasswordCorrect) {
-      throw new Error("Invalid Credentials");
-    } else {
-      const token = user.getJWT();
-      res.cookie("token", token, {
-        expires: new Date(Date.now() + 900000),
-      });
-      res.send("Login Success");
-    }
-  } catch (error) {
-    res.status(400).send("ERROR:" + error.message);
-  }
-});
-
-app.get("/profile", userAuth, async (req, res) => {
-  try {
-    const user = req.user;
-    res.send(user);
-  } catch (error) {
-    res.status(400).send("ERROR:" + error.message);
-  }
-});
-
-app.post("/connectionRequest", userAuth, (req, res) => {
-  res.send("Connection Request sent by " + req.user.firstName);
-});
-
-app.get("/feed", async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.send(users);
-  } catch (error) {
-    res.status(400).send("Something went wrong");
-  }
-});
-
-// GET data of the user
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.emailId;
-  try {
-    const user = await User.findOne({ emailId: userEmail });
-    if (!user) {
-      res.status(404).send("User not found");
-    } else {
-      res.send(user);
-    }
-
-    // const userEmail = req.body.emailId;
-    // const users = await User.find({ emailId: userEmail });
-    // if (users.length === 0) {
-    //   res.status(404).send("User not found");
-    // } else {
-    //   res.send(users);
-    // }
-  } catch (error) {
-    res.status(400).send("Something went wrong");
-  }
-});
-
-// DELETE data of the user
-app.delete("/user", async (req, res) => {
-  const userId = req.body.userId;
-  try {
-    const user = await User.findByIdAndDelete(userId);
-    res.send("User Deleted Successfully");
-  } catch (error) {
-    res.status(400).send("Something went wrong");
-  }
-});
-
-// UPDATE data of the user
-app.patch("/user/:userId", async (req, res) => {
-  const userId = req.params.userId;
-  const data = req.body;
-  // It will ignore the fields the which is not part of Schema (userId)
-  try {
-    //API LEVEL VALIDATION
-    const ALLOWED_UPDATES = [
-      "photoUrl",
-      "about",
-      "gender",
-      "age",
-      "skills",
-      "emailId",
-    ];
-    const isUpdateAllowed = Object.keys(req.body).every((k) =>
-      ALLOWED_UPDATES.includes(k)
-    );
-    if (!isUpdateAllowed) {
-      throw new Error("Update not allowed");
-    }
-
-    if (data?.skills.length > 10)
-      throw new Error("Skills can't be more than 10");
-
-    const user = await User.findByIdAndUpdate(userId, data, {
-      returnDocument: "after",
-      runValidators: true,
-      //By default validation will not work, we need to make runValidators:true
-    });
-
-    res.send("User Updated Successfully");
-  } catch (error) {
-    res.status(400).send("Update failed: " + error.message);
-  }
-});
+app.use("/", authRouter, requestRouter, profileRouter);
 
 connectToDB()
   .then(() => {
