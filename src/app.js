@@ -5,6 +5,7 @@ const connectToDB = require("./config/database");
 const authRouter = require("./routes/auth");
 const requestRouter = require("./routes/request");
 const profileRouter = require("./routes/profile");
+const userRouter = require("./routes/user");
 
 const app = express();
 const PORT = 7777;
@@ -12,7 +13,7 @@ const PORT = 7777;
 app.use(express.json());
 app.use(cookeParser());
 
-app.use("/", authRouter, requestRouter, profileRouter);
+app.use("/", authRouter, requestRouter, profileRouter, userRouter);
 
 connectToDB()
   .then(() => {
