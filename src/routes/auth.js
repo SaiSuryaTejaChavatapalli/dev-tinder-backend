@@ -53,4 +53,8 @@ authRouter.post("/logout", async (req, res) => {
   res.clearCookie("token").send("Logout Successful!");
 });
 
+authRouter.post("/forgotPassword", async (req, res) => {
+  const { currentPassword, newPassword, emailId } = req.body;
+});
+
 module.exports = authRouter;
