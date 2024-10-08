@@ -42,7 +42,7 @@ authRouter.post("/login", async (req, res) => {
       res.cookie("token", token, {
         expires: new Date(Date.now() + 900000),
       });
-      res.send("Login Success");
+      res.json({ message: "Login Successful", data: user });
     }
   } catch (error) {
     res.status(400).send("ERROR:" + error.message);
