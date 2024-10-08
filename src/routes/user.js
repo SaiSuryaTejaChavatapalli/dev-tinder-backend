@@ -1,6 +1,7 @@
 const express = require("express");
 const ConnectionRequest = require("../models/connectionRequest");
 const { userAuth } = require("../middlewares/auth");
+const User = require("../models/user");
 
 const userRouter = express.Router();
 
@@ -35,10 +36,52 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         { toUserId: loggedInUser._id, status: "accepted" },
         { fromUserId: loggedInUser._id, status: "accepted" },
       ],
-    }).populate("fromUserId", USER_SAFE_DATA);
-    const data = connectionRequests.map((request) => request.fromUserId);
+    })
+      .populate("fromUserId", USER_SAFE_DATA)
+      .populate("toUserId", USER_SAFE_DATA);
+
+    const data = connectionRequests.map((request) => {
+      if (request.fromUserId._id.toString() === loggedInUser._id.toString()) {
+        return request.toUserId;
+      }
+      return request.fromUserId;
+    });
 
     res.json({ message: "Data fetched Successfully", data });
+  } catch (error) {
+    res.status(400).json({ message: "ERROR:" + error.message });
+  }
+});
+
+userRouter.get("/feed", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+    const connectionRequets = await ConnectionRequest.find({
+      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+    }).select("fromUserId toUserId");
+
+    const hideUsersFromFeed = new Set();
+    connectionRequets.forEach((req) => {
+      hideUsersFromFeed.add(req.fromUserId.toString());
+      hideUsersFromFeed.add(req.toUserId.toString());
+    });
+    console.log(hideUsersFromFeed);
+    const feedUsers = await User.find({
+      $and: [
+        {
+          _id: {
+            $nin: Array.from(hideUsersFromFeed),
+          },
+        },
+        {
+          _id: {
+            $ne: loggedInUser._id,
+          },
+        },
+      ],
+    }).select(USER_SAFE_DATA);
+
+    res.json({ message: "Fetched feed successfully", data: feedUsers });
   } catch (error) {
     res.status(400).json({ message: "ERROR:" + error.message });
   }
