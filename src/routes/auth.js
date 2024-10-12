@@ -34,14 +34,13 @@ authRouter.post("/login", async (req, res) => {
     if (!user) {
       throw new Error("Invalid credentials");
     }
-    const isPasswordCorrect = user.validatePassword(password);
+    const isPasswordCorrect = await user.validatePassword(password);
+    console.log("IsPasswordcorrect", isPasswordCorrect);
     if (!isPasswordCorrect) {
       throw new Error("Invalid Credentials");
     } else {
       const token = user.getJWT();
-      res.cookie("token", token, {
-        expires: new Date(Date.now() + 900000),
-      });
+      res.cookie("token", token, {});
       res.json({ message: "Login Successful", data: user });
     }
   } catch (error) {

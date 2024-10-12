@@ -4,12 +4,13 @@ const User = require("../models/user");
 const userAuth = async (req, res, next) => {
   try {
     const { token } = req.cookies;
-    if (!token) {
-      throw new Error("Invalid token");
-    }
-    const { _id } = await jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(_id);
+    if (!token) {
+      return res.status(401).send("Please Login");
+    }
+    const verifiedData = await jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(verifiedData._id);
     if (!user) {
       throw new Error("User not found");
     }
