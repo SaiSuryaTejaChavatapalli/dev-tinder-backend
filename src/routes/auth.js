@@ -1,7 +1,13 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const { validateSignup } = require("../utils/validate");
 const User = require("../models/user");
+const {
+  REFRESH_SECRET,
+  ACCESS_SECRET,
+  ACCESS_TOKEN_EXPIRY,
+} = require("../../constants");
 
 const authRouter = express.Router();
 
@@ -20,9 +26,14 @@ authRouter.post("/signup", async (req, res) => {
       password: passwordHash,
     });
     const savedUser = await user.save();
-    const token = savedUser.getJWT();
-    res.cookie("token", token, {});
-    res.json({ message: "User Registered Successfully", data: savedUser });
+    const accessToken = savedUser.getAccessToken();
+    const refreshToken = savedUser.getRefreshToken();
+    res.cookie("refreshToken", refreshToken, {});
+    res.json({
+      message: "User Registered Successfully",
+      data: savedUser,
+      accessToken,
+    });
   } catch (error) {
     res.status(400).send("User Registration Failed" + error);
   }
@@ -41,9 +52,10 @@ authRouter.post("/login", async (req, res) => {
     if (!isPasswordCorrect) {
       throw new Error("Invalid Credentials");
     } else {
-      const token = user.getJWT();
-      res.cookie("token", token, {});
-      res.json({ message: "Login Successful", data: user });
+      const accessToken = user.getAccessToken();
+      const refreshToken = user.getRefreshToken();
+      res.cookie("refreshToken", refreshToken, {});
+      res.json({ message: "Login Successful", data: user, accessToken });
     }
   } catch (error) {
     res.status(400).send("ERROR:" + error.message);
@@ -54,8 +66,24 @@ authRouter.post("/logout", async (req, res) => {
   res.clearCookie("token").send("Logout Successful!");
 });
 
-authRouter.post("/forgotPassword", async (req, res) => {
-  const { currentPassword, newPassword, emailId } = req.body;
+authRouter.post("/refresh", async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) return res.sendStatus(401);
+  jwt.verify(refreshToken, REFRESH_SECRET, async (err, user) => {
+    if (err) return res.sendStatus(403);
+    // Issue a new access token
+    console.log("ACCESS SECRET", ACCESS_SECRET);
+    const newAccessToken = jwt.sign({ _id: user._id }, ACCESS_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRY,
+    });
+    const foundUser = await User.findOne({ _id: user._id });
+    res.json({
+      message: "Token refreshed successfully",
+      data: foundUser,
+      accessToken: newAccessToken,
+    });
+  });
 });
 
 module.exports = authRouter;

@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const {
+  ACCESS_SECRET,
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_SECRET,
+  REFRESH_TOKEN_EXPIRY,
+} = require("../../constants");
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -56,10 +63,17 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.methods.getJWT = function () {
+userSchema.methods.getAccessToken = function () {
   const user = this;
-  return jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
+  return jwt.sign({ _id: user._id }, ACCESS_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRY,
+  });
+};
+
+userSchema.methods.getRefreshToken = function () {
+  const user = this;
+  return jwt.sign({ _id: user._id }, REFRESH_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRY,
   });
 };
 
