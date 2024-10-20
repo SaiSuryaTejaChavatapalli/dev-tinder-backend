@@ -7,6 +7,7 @@ const {
   REFRESH_SECRET,
   ACCESS_SECRET,
   ACCESS_TOKEN_EXPIRY,
+  USER_SAFE_DATA,
 } = require("../../constants");
 
 const authRouter = express.Router();
@@ -54,8 +55,15 @@ authRouter.post("/login", async (req, res) => {
     } else {
       const accessToken = user.getAccessToken();
       const refreshToken = user.getRefreshToken();
+
+      const userDataObj = {};
+      Object.keys(user.toObject()).forEach((item) => {
+        if (USER_SAFE_DATA.includes(item)) {
+          userDataObj[item] = user[item];
+        }
+      });
       res.cookie("refreshToken", refreshToken, {});
-      res.json({ message: "Login Successful", data: user, accessToken });
+      res.json({ message: "Login Successful", data: userDataObj, accessToken });
     }
   } catch (error) {
     res.status(400).send("ERROR:" + error.message);
@@ -63,17 +71,18 @@ authRouter.post("/login", async (req, res) => {
 });
 
 authRouter.post("/logout", async (req, res) => {
-  res.clearCookie("token").send("Logout Successful!");
+  res.clearCookie("refreshToken").send("Logout Successful!");
 });
 
 authRouter.post("/refresh", async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
 
-  if (!refreshToken) return res.sendStatus(401);
+  if (!refreshToken)
+    return res.status(401).json({ message: "Unauthorized! Please Login!" });
   jwt.verify(refreshToken, REFRESH_SECRET, async (err, user) => {
     if (err) return res.sendStatus(403);
     // Issue a new access token
-    console.log("ACCESS SECRET", ACCESS_SECRET);
+
     const newAccessToken = jwt.sign({ _id: user._id }, ACCESS_SECRET, {
       expiresIn: ACCESS_TOKEN_EXPIRY,
     });
