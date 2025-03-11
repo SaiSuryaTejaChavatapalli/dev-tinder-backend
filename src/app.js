@@ -8,6 +8,8 @@ const profileRouter = require("./routes/profile");
 const userRouter = require("./routes/user");
 const cors = require("cors");
 
+require("dotenv").config();
+
 const app = express();
 const PORT = 7777;
 
