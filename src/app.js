@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cookeParser = require("cookie-parser");
 
@@ -7,8 +8,6 @@ const requestRouter = require("./routes/request");
 const profileRouter = require("./routes/profile");
 const userRouter = require("./routes/user");
 const cors = require("cors");
-
-require("dotenv").config();
 
 const app = express();
 const PORT = 7777;
